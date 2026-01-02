@@ -20,36 +20,36 @@ def extract_buyer_details(text):
     """Extract buyer information from PDF text"""
     buyer_info = {}
     
-    # Extract buyer name
-    buyer_match = re.search(r'Buyer \(Bill to\)\s*\n([^\n]+)', text)
-    if buyer_match:
-        buyer_info['Buyer Name'] = buyer_match.group(1).strip()
+    # Find the buyer section (after "Buyer (Bill to)")
+    buyer_section = re.search(r'Buyer \(Bill to\)(.*?)(?=Delivery Note No\.|e-Way Bill)', text, re.DOTALL)
     
-    # Extract address lines
-    address_section = re.search(r'Buyer \(Bill to\)\s*\n(.*?)(?=Lic No:|GSTIN)', text, re.DOTALL)
-    if address_section:
-        lines = [line.strip() for line in address_section.group(1).split('\n') if line.strip()]
+    if buyer_section:
+        buyer_text = buyer_section.group(1)
+        
+        # Extract address lines
+        lines = [line.strip() for line in buyer_text.split('\n') if line.strip() and not line.strip().startswith('Lic No') and not line.strip().startswith('GSTIN') and not line.strip().startswith('State Name')]
+        
         buyer_info['Buyer Name'] = lines[0] if len(lines) > 0 else ''
         buyer_info['Address Line 1'] = lines[1] if len(lines) > 1 else ''
         buyer_info['Address Line 2'] = lines[2] if len(lines) > 2 else ''
         buyer_info['Address Line 3'] = lines[3] if len(lines) > 3 else ''
         buyer_info['City'] = lines[4] if len(lines) > 4 else ''
-    
-    # Extract License No
-    lic_match = re.search(r'Lic No[:\s]+([A-Z0-9\-]+)', text)
-    if lic_match:
-        buyer_info['License No'] = lic_match.group(1).strip()
-    
-    # Extract GSTIN
-    gstin_match = re.search(r'GSTIN/UIN\s*:\s*([A-Z0-9]+)', text)
-    if gstin_match:
-        buyer_info['GSTIN'] = gstin_match.group(1).strip()
-    
-    # Extract State
-    state_match = re.search(r'State Name\s*:\s*([^,]+),\s*Code\s*:\s*(\d+)', text)
-    if state_match:
-        buyer_info['State'] = state_match.group(1).strip()
-        buyer_info['State Code'] = state_match.group(2).strip()
+        
+        # Extract License No from buyer section
+        lic_match = re.search(r'Lic No[:\s]+([A-Z0-9\-]+)', buyer_text)
+        if lic_match:
+            buyer_info['License No'] = lic_match.group(1).strip()
+        
+        # Extract buyer GSTIN (should be the second GSTIN in the document)
+        gstin_match = re.search(r'GSTIN/UIN\s*:\s*([A-Z0-9]+)', buyer_text)
+        if gstin_match:
+            buyer_info['GSTIN'] = gstin_match.group(1).strip()
+        
+        # Extract buyer State
+        state_match = re.search(r'State Name\s*:\s*([^,]+),\s*Code\s*:\s*(\d+)', buyer_text)
+        if state_match:
+            buyer_info['State'] = state_match.group(1).strip()
+            buyer_info['State Code'] = state_match.group(2).strip()
     
     return buyer_info
 
