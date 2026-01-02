@@ -9,4 +9,5 @@ dependencies = [
     "pandas>=2.3.3",
     "pdfplumber>=0.11.8",
     "pypdf2>=3.0.1",
+    "streamlit>=1.52.2",
 ]
